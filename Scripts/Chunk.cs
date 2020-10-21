@@ -38,7 +38,7 @@ public class Chunk : MonoBehaviour
     /// Creates a ground to the voxel array using values from the Perlin noise, above which the
     /// voxels values are faded away the higher they are from the ground.
     /// </summary>
-    public void AddGround(float groundLevel, Vector3Int chunkPos, float freq, int octave)
+    public void AddGround(float groundLevel, Vector3Int chunkPos, float range, float freq, int octave)
     {
         for (int k = 0; k < size.z; k++)
         {
@@ -49,19 +49,16 @@ public class Chunk : MonoBehaviour
                     int index = i + j * size.x + k * size.x * size.y;
 
                     float voxelHeight = j * LevelGeneration.VoxelSize.y + chunkPos.y;
-                    float groundHeight = Perlin.Fbm(
+                    float groundHeight = range * Perlin.Fbm(
                         (float)i / (size.x - 1) + chunkPos.x,
                         (float)k / (size.z - 1) + chunkPos.z,
-                        3);
+                        octave);
 
                     if (voxelHeight > groundLevel + groundHeight)
                     {
-                        voxels[index] = Mathf.Clamp(
-                            voxels[index] +
-                            2 * (voxelHeight - groundLevel) /
-                            ((size.y - 1) * LevelGeneration.VoxelSize.y - groundLevel),
-                            -1f,
-                            1f);
+                        voxels[index] += Mathf.Lerp(0, 1,
+                            (voxelHeight - (groundLevel + groundHeight)) /
+                            (LevelGeneration.LevelSize.y - (groundLevel + groundHeight)));
                     }
                 }
             }
@@ -149,6 +146,7 @@ public class Chunk : MonoBehaviour
 
             MeshRenderer renderer = nextMesh.gameObject.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = new Material(Shader.Find("Standard"));
+            //renderer.sharedMaterial.mainTexture = Resources.Load("Color") as Texture;
 
             nextMesh.gameObject.AddComponent<MeshCollider>();
         }
